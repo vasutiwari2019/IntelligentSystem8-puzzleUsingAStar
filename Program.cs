@@ -4,6 +4,7 @@ namespace IntelligentSystem8_puzzleUsingAStar
 {
     class Program
     {
+        // Program to demonstrate AStar
         static void Main(string[] args)
         {
             int[,] initialMatrix = { { 1, 2, 3 }, { 4, 8, 0, }, { 7, 6, 5 } };
