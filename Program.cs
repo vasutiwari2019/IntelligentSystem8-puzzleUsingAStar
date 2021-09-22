@@ -14,7 +14,9 @@ namespace IntelligentSystem8_puzzleUsingAStar
 
             astarAlgo.ComputeAstar(0, 0, 0, astarAlgo.InitialMatrix, finalMatrix);
 
-            Console.WriteLine("Misplaced items {0}", astarAlgo.CalculateCost(astarAlgo.InitialMatrix, finalMatrix));
+            //astarAlgo.PrintLinkedListMatrix(astarAlgo.linkedListMatrix);
+
+            //Console.WriteLine("Misplaced items {0}", astarAlgo.CalculateCost(astarAlgo.InitialMatrix, finalMatrix));
         }
     }
 }

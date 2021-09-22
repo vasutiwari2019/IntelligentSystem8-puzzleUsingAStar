@@ -11,10 +11,14 @@ namespace IntelligentSystem8_puzzleUsingAStar
 
         public PriorityQueue<int[,], int> priorityQueue;
 
+        public LinkedList<int[,]> linkedListMatrix;
+
         public AstarAlgo(int[,] InitialMatrix)
         {
             this.InitialMatrix = InitialMatrix;
             priorityQueue = new PriorityQueue<int[,], int>();
+            linkedListMatrix = new LinkedList<int[,]>();
+            linkedListMatrix.AddFirst(InitialMatrix);
         }
 
         public void PrintMatrix(int[,] matrix)
@@ -65,7 +69,7 @@ namespace IntelligentSystem8_puzzleUsingAStar
         {
             if (!CompareMatrices(initialMatrix, finalMatrix))
                 {
-                PrintMatrix(initialMatrix);
+                //PrintMatrix(initialMatrix);
                 for (int i = 0; i < 3; i++)
                 {
                     for (int j = 0; j < 3; j++)
@@ -73,11 +77,27 @@ namespace IntelligentSystem8_puzzleUsingAStar
                         if (initialMatrix[i, j] == 0)
                         {
                             ExpandNeighbours(initialMatrix, i, j, priorityQueue, g, h, f, finalMatrix);
-                            ComputeAstar(f, g + 1, h, priorityQueue.Dequeue(), finalMatrix);
+                            if (!CompareMatrices(priorityQueue.Peek(), initialMatrix))
+                            {
+                                linkedListMatrix.AddLast(priorityQueue.Peek());
+                                ComputeAstar(f, g + 1, h, priorityQueue.Dequeue(), finalMatrix);
+
+                                //linkedListMatrix.AddLast(priorityQueue.Peek());
+                                //ComputeAstar(f, g + 1, h, priorityQueue.Dequeue(), finalMatrix);
+                            }
+
+                            else
+                            {
+                                linkedListMatrix.RemoveLast();
+                                priorityQueue.Dequeue();
+                                ComputeAstar(f, g + 1, h, priorityQueue.Dequeue(), finalMatrix);
+                                //RemoveItemfromLinkedList(linkedListMatrix, priorityQueue.Peek());
+                            }
                         }
                     }
                 }
             }
+            PrintLinkedListMatrix(linkedListMatrix);
         }
 
         public void swap(int i, int j, int x, int y, int[,] tempMatrix)
@@ -280,6 +300,39 @@ namespace IntelligentSystem8_puzzleUsingAStar
             }
             PrintMatrix(initialMatrix);
             return true;
+        }
+
+        public void PrintLinkedListMatrix(LinkedList<int[,]> linkedListMatrix)
+        {
+            foreach(var item in  linkedListMatrix)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        Console.Write(" {0}", item[i, j]);
+                    }
+                    Console.WriteLine();
+                }
+                Console.WriteLine("*********");
+            }
+        }
+
+        public void RemoveItemfromLinkedList(List<int[,]> linkedListMatrix, int[,] tempMat)
+        {
+            bool result;
+            var listMatrix = new List<int[,]>();
+            foreach (var item in linkedListMatrix)
+            {
+                result = CompareMatrices(tempMat, item);
+                if (result)
+                    listMatrix.Add(item);
+            }
+
+            foreach(var item in listMatrix)
+            {
+                linkedListMatrix.Remove(item);
+            }
         }
     }
 }
