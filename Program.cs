@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace IntelligentSystem8_puzzleUsingAStar
 {
-    class Program
+    internal static class Program
     {
         // Program to demonstrate AStar
         static void Main(string[] args)
@@ -19,9 +19,9 @@ namespace IntelligentSystem8_puzzleUsingAStar
 
             Node node = new Node(0, 0, 0, priorityQueue);
 
-            var heuristic = "h1";
+            const string heuristic = "h1";
 
-            var count = 1000;
+            const int count = 1000;
 
             AStarAlgo aStarAlgo = new AStarAlgo(initialMatrix, node, heuristic,count);
 
