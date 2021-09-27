@@ -1,296 +1,353 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace IntelligentSystem8_puzzleUsingAStar
 {
-    public class AstarAlgo
+    public class AStarAlgo
     {
         public int[,] InitialMatrix { get; set; }
 
-
-        public PriorityQueue<int[,], int> priorityQueue;
+        public Node Node { get; set; }
 
         public LinkedList<int[,]> linkedListMatrix;
 
-        public AstarAlgo(int[,] InitialMatrix)
+        public string Heuristic { get; set; }
+
+        public int LoopCount { get; set; }
+
+        public AStarAlgo(int[,] InitialMatrix, Node Node, string Heuristic, int LoopCount)
         {
             this.InitialMatrix = InitialMatrix;
-            priorityQueue = new PriorityQueue<int[,], int>();
+            this.Node = Node;
             linkedListMatrix = new LinkedList<int[,]>();
-            linkedListMatrix.AddFirst(InitialMatrix);
+            this.Heuristic = Heuristic;
+            this.LoopCount = LoopCount;
         }
 
-        public void PrintMatrix(int[,] matrix)
+        public static void PrintMatrix(int[,] matrix)
         {
             for (int i = 0; i < 3; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    Console.Write(" {0}",matrix[i,j]);
+                    Console.Write(" {0}", matrix[i, j]);
                 }
                 Console.WriteLine();
             }
             Console.WriteLine("*********");
         }
-        // Need to do
-        public void GetManhattanDistance(int[,] matrix)
-        {
-            int dist = 0;
-            int x = 0, y = 0;
 
+        public static (int, int) FindMatrixIndex(int[,] finalMatrix, int element)
+        {
             for (int i = 0; i < 3; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    
+                    if (element == finalMatrix[i, j])
+                        return new(i, j);
                 }
-                Console.WriteLine();
             }
-        }
 
-        public int CalculateCost(int[,] tempMatrix, int [,] finalMatrix)
+            return default;
+        }
+        public int CalculateCost(int[,] tempMatrix, int[,] finalMatrix)
         {
             int dist = 0;
-
-            for (int i = 0; i < 3; i++)
+            switch (Heuristic)
             {
-                for (int j = 0; j < 3; j++)
-                {
-                    if (tempMatrix[i, j] != finalMatrix[i, j] && tempMatrix[i,j] !=0)
-                        dist++;
-                }
+                case "h1":
+                    for (int i = 0; i < 3; i++)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            if (tempMatrix[i, j] != finalMatrix[i, j] && tempMatrix[i, j] != 0)
+                                dist++;
+                        }
+                    }
+
+                    return dist;
+
+                case "h2":
+                    {
+                        for (int i = 0; i < 3; i++)
+                        {
+                            for (int j = 0; j < 3; j++)
+                            {
+                                int x;
+                                int y;
+                                (x, y) = FindMatrixIndex(finalMatrix, tempMatrix[i, j]);
+
+                                dist += Math.Abs(x - i) + Math.Abs(y - j);
+                            }
+                        }
+
+                        return dist;
+                    }
             }
 
-            return dist;
+            return 0;
         }
 
-        public void ComputeAstar(int f, int g, int h, int[,] initialMatrix, int[,] finalMatrix)
+        public void ComputeAstar(int g, int[,] initialMatrix, int[,] finalMatrix, Node node)
         {
-            if (!CompareMatrices(initialMatrix, finalMatrix))
-                {
-                //PrintMatrix(initialMatrix);
+            LoopCount--;
+
+            if (!CompareMatrices(initialMatrix, finalMatrix) && LoopCount > 0)
+            {
                 for (int i = 0; i < 3; i++)
                 {
                     for (int j = 0; j < 3; j++)
                     {
                         if (initialMatrix[i, j] == 0)
                         {
-                            ExpandNeighbours(initialMatrix, i, j, priorityQueue, g, h, f, finalMatrix);
-                            if (!CompareMatrices(priorityQueue.Peek(), initialMatrix))
-                            {
-                                //linkedListMatrix.AddLast(priorityQueue.Peek());
+                            ExpandNeighbours(initialMatrix, i, j, g, finalMatrix, node.priorityQueue.Peek().PreviousMatrix);
 
-                                ComputeAstar(f, g + 1, h, priorityQueue.Dequeue(), finalMatrix);
-                                //linkedListMatrix.AddLast(priorityQueue.Peek());
-                                //ComputeAstar(f, g + 1, h, priorityQueue.Dequeue(), finalMatrix);
-                            }
+                            if (node.priorityQueue.Peek().InitialMatrix == initialMatrix)
+                                node.priorityQueue.Dequeue();
 
-                            //else
-                            //{
-                            //    //linkedListMatrix.RemoveLast();
-                            //    priorityQueue.Dequeue();
-                            //    ComputeAstar(f, g + 1, h, priorityQueue.Dequeue(), finalMatrix);
-                            //    //RemoveItemfromLinkedList(linkedListMatrix, priorityQueue.Peek());
-                            //}
-                            priorityQueue.Dequeue();
+                            linkedListMatrix.AddLast(node.priorityQueue.Peek().InitialMatrix);
+
+                            var initialTempMatrix = node.priorityQueue.Peek().InitialMatrix;
+
+                            node.priorityQueue.Dequeue();
+
+                            ComputeAstar(node.priorityQueue.Peek().g + 1, initialTempMatrix, finalMatrix, node);
                         }
                     }
                 }
-                
-                //PrintMatrix(initialMatrix);
             }
-            PrintMatrix(initialMatrix);
-            //PrintLinkedListMatrix(linkedListMatrix);
         }
 
-        public void swap(int i, int j, int x, int y, int[,] tempMatrix)
+        public static void Swap(int i, int j, int x, int y, int[,] tempMatrix)
         {
-            int temp = tempMatrix[i,j];
+            int temp = tempMatrix[i, j];
             tempMatrix[i, j] = tempMatrix[x, y];
             tempMatrix[x, y] = temp;
         }
 
-        public void ExpandNeighbours(int[,] initialMatrix,int i, int j, PriorityQueue<int[,],
-                                     int> priorityQueue, int g, int h, int f, int[,] finalMatrix)
+        public void ExpandNeighbours(int[,] initialMatrix, int i, int j, int g, int[,] finalMatrix, int[,] previousMatrix)
         {
+            int h, f;
             int[,] tempMatrix = (int[,])initialMatrix.Clone();
+
+            var matrix = new Matrix(g, tempMatrix, previousMatrix);
+
+            //var node = new Node(g, f, h);
 
             if (i == 0)
             {
-                if( j == 0)
+                if (j == 0)
                 {
-                    swap(i, j, 0, 1,tempMatrix);
+                    Swap(i, j, 0, 1, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 1, 0, tempMatrix);
+                    Swap(i, j, 1, 0, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
                 }
-
-                else if( j == 1)
+                else if (j == 1)
                 {
-                    swap(i, j, 0, 2, tempMatrix);
+                    Swap(i, j, 0, 2, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 1, 1, tempMatrix);
+                    Swap(i, j, 1, 1, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 0, 0, tempMatrix);
+                    Swap(i, j, 0, 0, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
                 }
-
                 else
                 {
-                    swap(i, j, 0, 1, tempMatrix);
+                    Swap(i, j, 0, 1, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 1, 2, tempMatrix);
+                    Swap(i, j, 1, 2, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
                 }
             }
-
-            else if( i == 1)
+            else if (i == 1)
             {
                 if (j == 0)
                 {
-                    swap(i, j, 0, 0, tempMatrix);
+                    Swap(i, j, 0, 0, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 1, 1, tempMatrix);
+                    Swap(i, j, 1, 1, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 2, 0, tempMatrix);
+                    Swap(i, j, 2, 0, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
                 }
-
-                else if(j == 1)
+                else if (j == 1)
                 {
-                    swap(i, j, 0, 1, tempMatrix);
+                    Swap(i, j, 0, 1, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 1, 0, tempMatrix);
+                    Swap(i, j, 1, 0, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 2, 1, tempMatrix);
+                    Swap(i, j, 2, 1, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 1, 2, tempMatrix);
+                    Swap(i, j, 1, 2, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
                 }
-
                 else
                 {
-                    swap(i, j, 0, 2, tempMatrix);
+                    Swap(i, j, 0, 2, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 1, 1, tempMatrix);
+                    Swap(i, j, 1, 1, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 2, 2, tempMatrix);
+                    Swap(i, j, 2, 2, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
                 }
             }
-
             else
             {
                 if (j == 0)
                 {
-                    swap(i, j, 1, 0, tempMatrix);
+                    Swap(i, j, 1, 0, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 2, 1, tempMatrix);
+                    Swap(i, j, 2, 1, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
                 }
-
-                else if(j == 1)
+                else if (j == 1)
                 {
-                    swap(i, j, 1, 1, tempMatrix);
+                    Swap(i, j, 1, 1, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 2, 0, tempMatrix);
+                    Swap(i, j, 2, 0, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
-
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 2, 2, tempMatrix);
+                    Swap(i, j, 2, 2, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
                 }
-
                 else
                 {
-                    swap(i, j, 1, 2, tempMatrix);
+                    Swap(i, j, 1, 2, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
 
                     tempMatrix = (int[,])initialMatrix.Clone();
-                    swap(i, j, 2, 1, tempMatrix);
+                    Swap(i, j, 2, 1, tempMatrix);
+                    matrix = new Matrix(g, tempMatrix, previousMatrix);
                     h = CalculateCost(tempMatrix, finalMatrix);
                     f = g + h;
-                    priorityQueue.Enqueue(tempMatrix, f);
+                    matrix.g = g;
+                    Node.priorityQueue.Enqueue(matrix, f);
                 }
             }
         }
 
         //Returns true if matrices are equal
-        public bool CompareMatrices(int[,] initialMatrix, int[,] finalMatrix)
+        public static bool CompareMatrices(int[,] initialMatrix, int[,] finalMatrix)
         {
             for (int i = 0; i < 3; i++)
             {
@@ -302,13 +359,12 @@ namespace IntelligentSystem8_puzzleUsingAStar
                     }
                 }
             }
-            //PrintMatrix(initialMatrix);
             return true;
         }
 
-        public void PrintLinkedListMatrix(LinkedList<int[,]> linkedListMatrix)
+        public static void PrintLinkedListMatrix(LinkedList<int[,]> linkedListMatrix)
         {
-            foreach(var item in  linkedListMatrix)
+            foreach (var item in linkedListMatrix)
             {
                 for (int i = 0; i < 3; i++)
                 {
@@ -319,23 +375,6 @@ namespace IntelligentSystem8_puzzleUsingAStar
                     Console.WriteLine();
                 }
                 Console.WriteLine("*********");
-            }
-        }
-
-        public void RemoveItemfromLinkedList(List<int[,]> linkedListMatrix, int[,] tempMat)
-        {
-            bool result;
-            var listMatrix = new List<int[,]>();
-            foreach (var item in linkedListMatrix)
-            {
-                result = CompareMatrices(tempMat, item);
-                if (result)
-                    listMatrix.Add(item);
-            }
-
-            foreach(var item in listMatrix)
-            {
-                linkedListMatrix.Remove(item);
             }
         }
     }

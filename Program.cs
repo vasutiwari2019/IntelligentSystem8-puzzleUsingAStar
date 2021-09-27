@@ -19,15 +19,23 @@ namespace IntelligentSystem8_puzzleUsingAStar
 
             Node node = new Node(0, 0, 0, priorityQueue);
 
-            var heuristic = "h2";
+            var heuristic = "h1";
 
-            AStarAlgoCopy aStarAlgoCopy = new AStarAlgoCopy(initialMatrix, node, heuristic);
+            var count = 1000;
 
-            aStarAlgoCopy.linkedListMatrix.AddFirst(initialMatrix);
+            AStarAlgo aStarAlgo = new AStarAlgo(initialMatrix, node, heuristic,count);
 
-            aStarAlgoCopy.ComputeAstar(0, 0, 0, aStarAlgoCopy.InitialMatrix, finalMatrix, node, initialMatrix);
+            aStarAlgo.ComputeAstar(0, aStarAlgo.InitialMatrix, finalMatrix, node);
 
-            aStarAlgoCopy.PrintLinkedListMatrix(aStarAlgoCopy.linkedListMatrix);
+            AStarAlgo.PrintMatrix(initialMatrix);
+
+            if (aStarAlgo.LoopCount <= 0)
+            {
+                Console.WriteLine("No Solution");
+                Environment.Exit(0);
+            }
+
+            AStarAlgo.PrintLinkedListMatrix(aStarAlgo.linkedListMatrix);
         }
     }
 }
