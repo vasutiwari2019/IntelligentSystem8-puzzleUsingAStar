@@ -12,11 +12,14 @@ namespace IntelligentSystem8_puzzleUsingAStar
 
         public LinkedList<int[,]> linkedListMatrix;
 
-        public AStarAlgoCopy(int[,] InitialMatrix, Node node)
+        public string Heuristic { get; set; }
+
+        public AStarAlgoCopy(int[,] InitialMatrix, Node node, string Heuristic)
         {
             this.InitialMatrix = InitialMatrix;
             this.node = node;
             linkedListMatrix = new LinkedList<int[,]>();
+            this.Heuristic = Heuristic;
         }
 
         public void PrintMatrix(int[,] matrix)
@@ -31,36 +34,57 @@ namespace IntelligentSystem8_puzzleUsingAStar
             }
             Console.WriteLine("*********");
         }
-        // Need to do
-        public void GetManhattanDistance(int[,] matrix)
-        {
-            int dist = 0;
-            int x = 0, y = 0;
 
+        public static (int,int) FindMatrixIndex(int[,] finalMatrix, int element)
+        {
             for (int i = 0; i < 3; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
-
+                    if(element == finalMatrix[i,j])
+                        return new (i,j);
                 }
-                Console.WriteLine();
             }
-        }
 
+            return default;
+        }
         public int CalculateCost(int[,] tempMatrix, int[,] finalMatrix)
         {
             int dist = 0;
-
-            for (int i = 0; i < 3; i++)
+            switch (Heuristic)
             {
-                for (int j = 0; j < 3; j++)
-                {
-                    if (tempMatrix[i, j] != finalMatrix[i, j] && tempMatrix[i, j] != 0)
-                        dist++;
-                }
+                case "h1":
+                    for (int i = 0; i < 3; i++)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            if (tempMatrix[i, j] != finalMatrix[i, j] && tempMatrix[i, j] != 0)
+                                dist++;
+                        }
+                    }
+
+                    return dist;
+
+
+                case "h2":
+                    {
+                        for (int i = 0; i < 3; i++)
+                        {
+                            for (int j = 0; j < 3; j++)
+                            {
+                                int x;
+                                int y;
+                                (x, y) = FindMatrixIndex(finalMatrix, tempMatrix[i, j]);
+
+                                dist += Math.Abs(x - i) + Math.Abs(y - j);
+                            }
+                        }
+
+                        return dist;
+                    }
             }
 
-            return dist;
+            return 0;
         }
 
         public void ComputeAstar(int f, int g, int h, int[,] initialMatrix, int[,] finalMatrix, Node node, int[,] previousMatrix)
@@ -74,17 +98,17 @@ namespace IntelligentSystem8_puzzleUsingAStar
                         if (initialMatrix[i, j] == 0)
                         {
                             ExpandNeighbours(initialMatrix, i, j, g, h, f, finalMatrix, node.priorityQueue.Peek().PreviousMatrix);
-                            //if (!CompareMatrices(node.priorityQueue.Peek().InitialMatrix, initialMatrix))
-                            //{
+                            
                             if (node.priorityQueue.Peek().InitialMatrix == initialMatrix)
                                 node.priorityQueue.Dequeue();
 
                             if (CompareMatrices(node.priorityQueue.Peek().PreviousMatrix, linkedListMatrix.Last.Value)) //linkedListMatrix.Last.Value
+                            {
                                 linkedListMatrix.AddLast(node.priorityQueue.Peek().InitialMatrix);
-
+                            }
                             else
                             {
-                                //linkedListMatrix.RemoveLast();
+                                
                                 linkedListMatrix.AddLast(node.priorityQueue.Peek().InitialMatrix);
                             }
                             var initialTempMatrix = node.priorityQueue.Peek().InitialMatrix;
